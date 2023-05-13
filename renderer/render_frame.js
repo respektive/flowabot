@@ -19,6 +19,7 @@ const config = require('../config.json');
 const helper = require('../helper.js');
 
 const MAX_SIZE = 25 * 1024 * 1024;
+const MAX_SIZE_DM = 8 * 1024 * 1024;
 
 let enabled_mods = [""];
 
@@ -788,7 +789,7 @@ module.exports = {
 
 						ffmpeg_args.push(
 							'-filter_complex', `"overlay=(W-w)/2:shortest=1"`,
-							'-pix_fmt', 'yuv420p', '-r', fps, '-c:v', 'libx264', /*'-b:v', `${bitrate}k`*/ '-crf', 23,
+							'-pix_fmt', 'yuv420p', '-r', fps, '-c:v', 'libx264', /*'-b:v', `${bitrate}k`*/ '-crf', 18,
 							'-c:a', 'aac', '-b:a', '164k', '-shortest', '-preset', 'veryfast',
 							'-movflags', 'faststart', '-g', fps, '-force_key_frames', '00:00:00.000', `${file_path}/video.mp4`
 						);
@@ -817,7 +818,18 @@ module.exports = {
                             console.log('size', stat.size / 1024, 'KiB');
                             console.log('max size', MAX_SIZE / 1024, 'KiB');
 
-                            if(stat.size < MAX_SIZE){
+                            if(stat.size < MAX_SIZE && msg.channel.type == "text"){
+                                resolveRender({files: [{
+                                    attachment: `${file_path}/video.${options.type}`,
+                                    name: `video.${options.type}`
+                                }]}).then(() => {
+                                    fs.promises.rmdir(file_path, { recursive: true }).catch(helper.error);
+                                })
+                                .catch(console.error)
+                                .finally(() => {
+                                    fs.promises.rmdir(file_path, { recursive: true }).catch(helper.error);
+                                });
+                            }else if(stat.size < MAX_SIZE_DM ){
                                 resolveRender({files: [{
                                     attachment: `${file_path}/video.${options.type}`,
                                     name: `video.${options.type}`

@@ -66,6 +66,7 @@ module.exports = {
             let flashlight = false;
             let analyze = false;
             let lagtrain = false;
+            let argon = false;
 
             argv.map(arg => arg.toLowerCase());
 
@@ -119,13 +120,15 @@ module.exports = {
                     analyze = true;
                 }else if(arg == 'lagtrain'){
                     lagtrain = true;
+                }else if(arg == 'argon'){
+                    argon = true;
                 }else if(arg.endsWith('s')){
                     length = parseFloat(arg);
                 }else if(arg.endsWith('x')){
                     combo = parseInt(arg);
                 }else if(/^([0-9]+)$/g.test(arg)){
                     time += parseInt(arg) * 1000;
-                }else if(arg.toLowerCase().startsWith('ar')){
+                }else if(/^ar[0-9]+/g.test(arg.toLowerCase())){
                     ar = parseFloat(arg.substr(2));
                 }else if(arg.toLowerCase().startsWith('cs')){
                     cs = parseFloat(arg.substr(2));
@@ -213,7 +216,7 @@ module.exports = {
 
                             frame.get_frames(download_path, time, length * 1000, mods, size, {
                                 combo,
-                                type: video_type, cs, ar, od, analyze, lagtrain, hidden, flashlight, black: false, osr, score_id, audio, fps, speed,
+                                type: video_type, cs, ar, od, analyze, lagtrain, argon, hidden, flashlight, black: false, osr, score_id, audio, fps, speed,
                                 fill: video_type == 'mp4', noshadow: true, percent, border: false, objects, msg
                             });
 						}else{

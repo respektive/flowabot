@@ -836,7 +836,7 @@ async function updateAccessToken(){
     return
 }
 
-function updateTrackedUsers(){
+async function updateTrackedUsers(){
     for(user_id in tracked_users){
         let user = user_id;
 
@@ -896,9 +896,12 @@ function updateTrackedUsers(){
         }).catch(err => {
 			helper.error('Error updating tracking', err);
 		});
+
+        await new Promise(r => setTimeout(r, 1000));
     }
 
-	setTimeout(updateTrackedUsers, 60 * 1000);
+    // every 5 min
+	setTimeout(updateTrackedUsers, 300 * 1000);
 }
 
 // async function getAccessToken(){
@@ -2292,6 +2295,26 @@ module.exports = {
             return;
         });
     },
+
+    get_users: async function(options, cb){
+
+        let { user_id, error } = await getUserId(options.user);
+        if(error) { cb("Couldn't reach osu!api. 💀") }
+
+		let requests = [
+	        api.get(`/users?ids%5B%5D=${user_id}`),
+            api.get(`/users/${user_id}/osu`)
+        ];
+        
+        const results = await Promise.all(requests);
+
+        let users = results[0].data.users;
+        let user = results[1].data;
+
+        let medal_count = user.user_achievements.length;
+
+        cb(null, { users, medal_count });
+	},
 
     calculate_strains: calculateStrains,
 

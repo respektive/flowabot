@@ -828,7 +828,7 @@ async function updateAccessToken(){
         baseURL: 'https://lazer.ppy.sh/api/v2',
         headers: {
             Authorization: `Bearer ${access_token}`,
-            "x-api-version": 20221221
+            "x-api-version": 20240124
         }
     });
 
@@ -2043,7 +2043,7 @@ module.exports = {
 
             cb(null, embed);
         } catch (e) {
-            cb('Map not in the database, maps that are too new don\'t work yet. 😐');
+            cb('Map not in the database, or invalid beatmap url. 😐');
             helper.error(e);
             return false;
         }

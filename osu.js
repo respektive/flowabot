@@ -825,10 +825,10 @@ async function updateAccessToken(){
     access_token = json.access_token
 
     api = axios.create({
-        baseURL: 'https://lazer.ppy.sh/api/v2',
+        baseURL: 'https://osu.ppy.sh/api/v2',
         headers: {
             Authorization: `Bearer ${access_token}`,
-            "x-api-version": 20221221
+            "x-api-version": 20240124
         }
     });
 

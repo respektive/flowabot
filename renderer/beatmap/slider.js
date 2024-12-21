@@ -312,4 +312,8 @@ const applySliders = Beatmap => {
 	}
 }
 
-module.exports = applySliders;
+const applySlider = (Beatmap, Slider) => {
+	new SliderProcessor(Beatmap).process(Slider);
+}
+
+module.exports = { applySliders, applySlider };

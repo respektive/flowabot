@@ -9,7 +9,7 @@ const config = require('../../config.json');
 const { difficultyRange, float } = require('./util');
 const { parseReplay, applyReplay } = require('./replay');
 
-const applySliders = require('./slider');
+const { applySliders } = require('./slider');
 const applyHitsounds = require('./hitsounds');
 const applyStacking = require('./stacking');
 const applyMods = require('./mods/mods');

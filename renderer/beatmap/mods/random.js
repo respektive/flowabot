@@ -12,41 +12,20 @@ const {
 	vectorEquals,
 } = require('../util');
 
+const { applySlider } = require('../slider');
+
 /*
 RANDOM MOD
 */
-function FlipSliderPointHorizontally(slider, point) {
-	const relPosX = point[0] - slider.position[0];
-	point[0] = -relPosX + slider.position[0];
-}
+function switchSliderPoints(slider, relative = true) {
+	const vectorFunction = relative ? vectorSubtract : vectorAdd;
 
-function FlipSliderInPlaceHorizontally(slider) {
-    FlipSliderPointHorizontally(slider, slider.endPosition);
+	for (const point of slider.points) {
+		const relPos = vectorFunction(point, slider.position);
 
-    for (let point of slider.points)
-        FlipSliderPointHorizontally(slider, point); 
-
-    for (let dot of slider.SliderDots)
-        FlipSliderPointHorizontally(slider, dot); 
-
-    for (let tick of slider.SliderTicks)
-        FlipSliderPointHorizontally(slider, tick); 
-
-	1;
-}
-
-function RotateSlider(slider, rotation) {
-    slider.position = vectorRotate(slider.position, rotation);
-    slider.endPosition = vectorRotate(slider.endPosition, rotation);
-
-    for (let point of slider.points)
-        point = vectorRotate(point, rotation);
-
-    for (let dot of slider.SliderDots)
-        dot = vectorRotate(dot, rotation);
-
-    for (let tick of slider.SliderTicks)
-        tick = vectorRotate(tick, rotation);
+		point[0] = relPos[0];
+		point[1] = relPos[1];
+	}
 }
 
 function RotateAwayFromEdge(prevObjectPos, posRelativeToPrev, rotationRatio = 0.5) {
@@ -142,46 +121,6 @@ function clampToPlayfieldWithPadding(position, padding) {
     ]);
 }
 
-function computeModifiedPosition(current, previous, beforePrevious) {
-    let previousAbsoluteAngle = 0;
-
-    if (previous != null) {
-        if (previous.objectName == 'slider') {
-            previousAbsoluteAngle = getSliderRotation(previous);
-        } else {
-            const earliestPosition = beforePrevious?.position ?? PLAYFIELD_CENTER;
-            const relativePosition = vectorSubtract(previous.position, earliestPosition);
-			previousAbsoluteAngle = MathF.atan2(float(relativePosition[1]), float(relativePosition[0]));
-        }
-    }
-
-    let absoluteAngle = float(previousAbsoluteAngle + current.RelativeAngle);
-
-    let posRelativeToPrev = [
-        current.DistanceFromPrevious * MathF.cos(absoluteAngle),
-        current.DistanceFromPrevious * MathF.sin(absoluteAngle)
-    ];
-
-    const lastEndPosition = previous?.endPositionModified ?? PLAYFIELD_CENTER;
-
-    posRelativeToPrev = RotateAwayFromEdge(lastEndPosition, posRelativeToPrev);
-
-    current.positionModified = vectorFAdd(lastEndPosition, posRelativeToPrev);
-
-    if (current.objectName != 'slider')
-        return;
-
-    absoluteAngle = Math.atan2(posRelativeToPrev[1], posRelativeToPrev[0]);
-
-    const centreOfMassOriginal = calculateCentreOfMass(current);
-    let centreOfMassModified = vectorRotate(centreOfMassOriginal, current.Rotation + absoluteAngle - getSliderRotation(current));
-    centreOfMassModified = RotateAwayFromEdge(current.positionModified, centreOfMassModified);
-
-    const relativeRotation = Math.atan2(centreOfMassModified[1], centreOfMassModified[0]) - Math.atan2(centreOfMassOriginal[1], centreOfMassOriginal[0]);
-    if (!AlmostEquals(relativeRotation, 0))
-        RotateSlider(current, relativeRotation);
-}
-
 class RandomMod {
 	Random;
 	Beatmap;
@@ -217,6 +156,78 @@ class RandomMod {
 			previousPosition = hitObject.endPosition;
 			previousAngle = absoluteAngle;
 		}
+	}
+
+	computeModifiedPosition (current, previous, beforePrevious) {
+		let previousAbsoluteAngle = 0;
+	
+		if (previous != null) {
+			if (previous.objectName == 'slider') {
+				previousAbsoluteAngle = getSliderRotation(previous);
+			} else {
+				const earliestPosition = beforePrevious?.position ?? PLAYFIELD_CENTER;
+				const relativePosition = vectorSubtract(previous.position, earliestPosition);
+				previousAbsoluteAngle = MathF.atan2(float(relativePosition[1]), float(relativePosition[0]));
+			}
+		}
+	
+		let absoluteAngle = float(previousAbsoluteAngle + current.RelativeAngle);
+	
+		let posRelativeToPrev = [
+			current.DistanceFromPrevious * MathF.cos(absoluteAngle),
+			current.DistanceFromPrevious * MathF.sin(absoluteAngle)
+		];
+	
+		const lastEndPosition = previous?.endPositionModified ?? PLAYFIELD_CENTER;
+	
+		posRelativeToPrev = RotateAwayFromEdge(lastEndPosition, posRelativeToPrev);
+	
+		current.positionModified = vectorFAdd(lastEndPosition, posRelativeToPrev);
+	
+		if (current.objectName != 'slider')
+			return;
+	
+		absoluteAngle = Math.atan2(posRelativeToPrev[1], posRelativeToPrev[0]);
+	
+		const centreOfMassOriginal = calculateCentreOfMass(current);
+		let centreOfMassModified = vectorRotate(centreOfMassOriginal, current.Rotation + absoluteAngle - getSliderRotation(current));
+		centreOfMassModified = RotateAwayFromEdge(current.positionModified, centreOfMassModified);
+	
+		const relativeRotation = Math.atan2(centreOfMassModified[1], centreOfMassModified[0]) - Math.atan2(centreOfMassOriginal[1], centreOfMassOriginal[0]);
+		if (!AlmostEquals(relativeRotation, 0))
+			this.RotateSlider(current, relativeRotation);
+	}
+
+	FlipSliderInPlaceHorizontally (slider) {
+		slider;
+		switchSliderPoints(slider);
+		slider;
+
+		for (let point of slider.points)
+			point[0] = -point[0];
+
+		slider;
+
+		switchSliderPoints(slider, false);
+		slider;
+
+		applySlider(this.Beatmap, slider);
+		slider;
+	}
+
+	RotateSlider (slider, rotation) {
+		slider.position = vectorRotate(slider.position, rotation);
+	
+		switchSliderPoints(slider);
+
+		for (const point of slider.points) {
+			const rotate = vectorRotate(point, rotation);
+			point[0] = rotate[0];
+			point[1] = rotate[1];
+		}
+	
+		switchSliderPoints(slider, false);
+		applySlider(this.Beatmap, slider);
 	}
 
 	randomGaussian (mean = 0, stdDev = 1) {
@@ -303,7 +314,7 @@ class RandomMod {
 		hitObject.endPositionModified = [...clampPosition]
 		hitObject.positionModified = [...clampPosition];
 
-		hitObject.position = [...hitObject.positionModified]
+		hitObject.position = [...hitObject.positionModified];
 
 		return vectorFSubtract(hitObject.positionModified, previousPosition);
 	}
@@ -360,9 +371,9 @@ class RandomMod {
 			const diff2 = getAngleDifference(slider.Rotation + Math.PI, currentRotation);
 	
 			if (diff1 < diff2) {
-				RotateSlider(slider, slider.Rotation - getSliderRotation(slider));
+				this.RotateSlider(slider, slider.Rotation - getSliderRotation(slider));
 			} else {
-				RotateSlider(slider, slider.Rotation + Math.PI - getSliderRotation(slider));
+				this.RotateSlider(slider, slider.Rotation + Math.PI - getSliderRotation(slider));
 			}
 	
 			possibleMovementBounds = this.calculatePossibleMovementBounds(slider);
@@ -380,7 +391,14 @@ class RandomMod {
 			? clamp(possibleMovementBounds.top, 0, PLAYFIELD_HEIGHT)
 			: clamp(previousPosition[1], possibleMovementBounds.top, possibleMovementBounds.bottom);
 	
-		slider.position = slider.positionModified = [newX, newY];
+		switchSliderPoints(slider);
+		
+		slider.position = [newX, newY];
+		slider.positionModified = [newX, newY];
+
+		switchSliderPoints(slider, false);
+		applySlider(this.Beatmap, slider);
+
 		slider.endPositionModified = slider.endPosition;
 	
 		return vectorSubtract(slider.positionModified, previousPosition);
@@ -399,6 +417,8 @@ class RandomMod {
 	apply () {
 		if (!this.Beatmap.Mods.has('RD')) 
 			return;
+
+		const Sliders = this.Beatmap.hitObjects.filter(o => o.objectName == 'slider');
 		
 		this.generatePositionInfos();
 
@@ -412,7 +432,7 @@ class RandomMod {
 			}
 	
 			if (hitObject.objectName == 'slider' && this.Random.sample() < 0.5) {
-				FlipSliderInPlaceHorizontally(hitObject);
+				this.FlipSliderInPlaceHorizontally(hitObject);
 			}
 	
 			if (i == 0) {
@@ -450,7 +470,7 @@ class RandomMod {
 				continue;
 			}
 	
-			computeModifiedPosition(hitObject, previous, i > 1 ? this.Beatmap.hitObjects[i - 2] : undefined);
+			this.computeModifiedPosition(hitObject, previous, i > 1 ? this.Beatmap.hitObjects[i - 2] : undefined);
 	
 			let shift = [0, 0];
 	
